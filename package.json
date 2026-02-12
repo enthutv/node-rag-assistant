@@ -1,0 +1,22 @@
+{
+  "name": "ai-rag-assistant",
+  "version": "1.0.0",
+  "description": "Production-structured AI RAG assistant",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node --env-file=.env src/app.js",
+    "dev": "node --env-file=.env src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@pinecone-database/pinecone": "^7.0.0",
+    "axios": "^1.13.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "openai": "^6.21.0"
+  }
+}
