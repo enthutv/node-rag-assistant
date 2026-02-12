@@ -1,6 +1,7 @@
 import { getPineconeIndex } from "../config/pinecone.js";
 
 export async function upsertVector(id, embedding, metadata = {}) {
+  console.log("Upserting to Pinecone...");
   const index = getPineconeIndex();
 
   await index.upsert({
