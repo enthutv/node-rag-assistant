@@ -1,3 +1,9 @@
+import dotenv from "dotenv";
+
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
+
 import OpenAI from "openai";
 
 const client = new OpenAI({

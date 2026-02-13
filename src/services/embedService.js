@@ -1,22 +1,19 @@
 import openai from "../config/openai.js";
+import logger from "../utils/logger.js";
 
 export async function createEmbedding(text) {
-  console.log("Calling OpenAI for embedding...");
+  logger.info("Creating embedding", { textLength: text.length });
 
   const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: text,
   });
 
-  const embedding = response?.data?.[0]?.embedding;
+  const embedding = response.data[0].embedding;
 
-  if (!embedding) {
-    console.log("❌ Embedding missing!");
-    throw new Error("Embedding is undefined");
-  }
-
-  console.log("Embedding length:", embedding.length);
-  console.log("First 5 values:", embedding.slice(0, 5));
+  logger.info("Embedding created", {
+    length: embedding.length,
+  });
 
   return embedding;
 }

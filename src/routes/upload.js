@@ -3,46 +3,65 @@ import crypto from "crypto";
 import { createEmbedding } from "../services/embedService.js";
 import { upsertVector } from "../services/vectorService.js";
 import { chunkText } from "../utils/chunker.js";
+import logger from "../utils/logger.js";
 
 const router = express.Router();
 
 router.post("/upload", async (req, res) => {
   try {
-    console.log("🔥 Upload route hit");
+    logger.info("Upload route hit");
 
     const { text } = req.body;
 
-    console.log("📥 Text received:", text);
-
     if (!text) {
+      logger.warn("Upload attempt with missing text");
       return res.status(400).json({ error: "Text is required" });
     }
 
+    logger.info("Text received", {
+      textLength: text.length,
+    });
+
     const chunks = chunkText(text);
-    console.log("🧩 Chunks created:", chunks.length);
+
+    logger.info("Chunks created", {
+      chunkCount: chunks.length,
+    });
 
     for (const chunk of chunks) {
-      console.log("➡️ Processing chunk:", chunk.substring(0, 50));
+      logger.info("Processing chunk", {
+        preview: chunk.substring(0, 50),
+      });
 
-      console.log("🔹 Calling OpenAI for embedding...");
       const embedding = await createEmbedding(chunk);
 
-      const id = crypto.randomUUID();
-      console.log("🆔 Generated ID:", id);
+      if (!embedding || embedding.length === 0) {
+        logger.error("Embedding failed or empty", {
+          preview: chunk.substring(0, 50),
+        });
+        continue;
+      }
 
-      console.log("📡 Upserting to Pinecone...");
+      const id = crypto.randomUUID();
+
+      logger.info("Generated vector ID", { id });
+
       await upsertVector(id, embedding, { text: chunk });
 
-      console.log("✅ Chunk stored successfully");
+      logger.info("Chunk stored successfully", { id });
     }
 
     res.json({
       message: "Document uploaded successfully",
-      chunksStored: chunks.length
+      chunksStored: chunks.length,
     });
 
   } catch (error) {
-    console.error("❌ Upload error:", error);
+    logger.error("Upload error", {
+      message: error.message,
+      stack: error.stack,
+    });
+
     res.status(500).json({ error: error.message });
   }
 });
