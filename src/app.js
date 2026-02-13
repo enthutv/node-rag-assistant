@@ -7,17 +7,21 @@ import uploadRoute from "./routes/upload.js";
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Routes
 app.use("/api", uploadRoute);
 app.use("/api", testRoute);
 app.use("/api", chatRoute);
 
+// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "AI Assistant Running" });
 });
 
+// OpenAI test endpoint
 app.get("/test-openai", async (req, res) => {
   try {
     const response = await openai.embeddings.create({
@@ -37,8 +41,9 @@ app.get("/test-openai", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
+// 🔥 IMPORTANT FOR RENDER
+const PORT = process.env.PORT;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
