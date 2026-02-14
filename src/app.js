@@ -6,6 +6,8 @@ import testRoute from "./routes/test.js";
 import chatRoute from "./routes/chat.js";
 import uploadRoute from "./routes/upload.js";
 import logger from "./utils/logger.js";
+import authRoute from "./routes/auth.js";
+import { authenticateToken } from "./middleware/authMiddleware.js";
 
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -32,9 +34,10 @@ app.use((req, res, next) => {
 // ======================
 // Routes
 // ======================
-app.use("/api", uploadRoute);
-app.use("/api", testRoute);
-app.use("/api", chatRoute);
+app.use("/auth", authRoute);
+
+app.use("/api", authenticateToken, uploadRoute);
+app.use("/api", authenticateToken, chatRoute);
 
 // ======================
 // Health Check
