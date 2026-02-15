@@ -8,6 +8,7 @@ import uploadRoute from "./routes/upload.js";
 import logger from "./utils/logger.js";
 import authRoute from "./routes/auth.js";
 import { authenticateToken } from "./middleware/authMiddleware.js";
+import { requireRole } from "./middleware/roleMiddleware.js";
 
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -36,8 +37,21 @@ app.use((req, res, next) => {
 // ======================
 app.use("/auth", authRoute);
 
-app.use("/api", authenticateToken, uploadRoute);
-app.use("/api", authenticateToken, chatRoute);
+// 🔒 Secure Upload (Admin Only)
+app.use(
+  "/api/upload",
+  authenticateToken,
+  requireRole("admin"),
+  uploadRoute
+);
+
+// 🔒 Secure Chat (Admin + User)
+app.use(
+  "/api/chat",
+  authenticateToken,
+  requireRole("admin", "user"),
+  chatRoute
+);
 
 // ======================
 // Health Check

@@ -7,7 +7,7 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
-router.post("/upload", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     logger.info("Upload route hit");
 
