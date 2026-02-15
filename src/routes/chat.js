@@ -1,5 +1,6 @@
 import express from "express";
 import logger from "../utils/logger.js";
+import pool from "../config/db.js"; // ✅ Added for cost tracking
 import { createEmbedding } from "../services/embedService.js";
 import { queryVector } from "../services/vectorService.js";
 import { generateAnswer } from "../services/chatService.js";
@@ -32,6 +33,31 @@ router.post("/", async (req, res) => {
       email: user?.email,
       questionLength: question.length,
     });
+
+    // ================================
+    // ✅ COST LIMIT CHECK (Added Only)
+    // ================================
+    const { rows } = await pool.query(
+      "SELECT total_cost, cost_limit FROM users WHERE id = $1",
+      [user.id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const currentCost = Number(rows[0].total_cost);
+    const costLimit = Number(rows[0].cost_limit);
+
+    if (currentCost >= costLimit) {
+      logger.warn("Cost limit exceeded", {
+        email: user?.email,
+        currentCost,
+        costLimit,
+      });
+
+      return res.status(403).json({ error: "Cost limit exceeded" });
+    }
 
     // 1️⃣ Create embedding from question
     const embedding = await createEmbedding(question);
@@ -68,6 +94,29 @@ router.post("/", async (req, res) => {
 
       return res.status(500).json({ error: "Failed to generate answer" });
     }
+
+    // ================================
+    // ✅ COST UPDATE (Added Only)
+    // ================================
+    const totalTokens = Number(result?.usage?.total_tokens || 0);
+    const estimatedCost = Number(result?.estimatedCost || 0);
+
+    await pool.query(
+      `
+      UPDATE users
+      SET total_tokens = total_tokens + $1,
+          total_cost = total_cost + $2,
+          daily_cost = daily_cost + $2
+      WHERE id = $3
+      `,
+      [totalTokens, estimatedCost, user.id]
+    );
+
+    logger.info("Cost tracking updated", {
+      email: user?.email,
+      addedTokens: totalTokens,
+      addedCost: estimatedCost,
+    });
 
     logger.info("Chat response generated", {
       email: user?.email,
