@@ -9,7 +9,9 @@ import logger from "./utils/logger.js";
 import authRoute from "./routes/auth.js";
 import { authenticateToken } from "./middleware/authMiddleware.js";
 import { requireRole } from "./middleware/roleMiddleware.js";
+import { initializeDatabase } from "./config/db.js";
 
+// Load environment variables (local only)
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
@@ -80,6 +82,7 @@ app.get("/test-openai", async (req, res) => {
       length: embedding.length,
       firstFive: embedding.slice(0, 5),
     });
+
   } catch (error) {
     logger.error("OpenAI test error", {
       message: error.message,
@@ -107,6 +110,20 @@ app.use((err, req, res, next) => {
 // ======================
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, "0.0.0.0", () => {
-  logger.info(`Server running`, { port: PORT });
-});
+const startServer = async () => {
+  try {
+    await initializeDatabase(); // ✅ Only called ONCE here
+
+    app.listen(PORT, "0.0.0.0", () => {
+      logger.info("Server running", { port: PORT });
+    });
+
+  } catch (error) {
+    logger.error("Server startup error", {
+      message: error.message,
+    });
+    process.exit(1); // Fail fast if DB fails
+  }
+};
+
+startServer();
